@@ -10,23 +10,23 @@ import (
 )
 
 var (
-	// ErrInvalidAccessToken
+	// ErrInvalidAccessToken is an error that can be returned when verifying a token.
 	ErrInvalidAccessToken = errors.New("invalid access token")
 
-	// ErrExpiredAccessToken
+	// ErrExpiredAccessToken is an error that can be returned when verifying a token.
 	ErrExpiredAccessToken = errors.New("expired access token")
 
-	// ErrTokenCreationFailed
+	// ErrTokenCreationFailed  is an error that can be returned when creating a token.
 	ErrTokenCreationFailed = errors.New("creating authorization token failed")
 
-	// ErrSigningKeyEmpty
+	// ErrSigningKeyEmpty  is an error that can be returned when creating a token.
 	ErrSigningKeyEmpty = errors.New("JWT signing key cannot be empty")
 
-	// ClaimIssuer is the identiy of the issuer
-	ClaimIssuer = "github.com/emicklei/tokenman"
+	// ErrorClaimIssuerEmpty  is an error that can be returned when creating a token.
+	ErrorClaimIssuerEmpty = errors.New("JWT claim issuer cannot be empty")
 
-	// ClaimAudience described what the token is mean for
-	ClaimAudience = "authorization"
+	// ErrorClaimAudienceEmpty is an error that can be returned when creating a token.
+	ErrorClaimAudienceEmpty = errors.New("JWT claim audience cannot be empty")
 )
 
 const (
@@ -47,6 +47,10 @@ type TokenMan struct {
 	mutex            *sync.RWMutex
 	sharedSigningKey []byte
 	cache            map[string]AccessToken
+	// ClaimIssuer sets Issuer and is stored in each generated token. Cannot be empty
+	ClaimIssuer string
+	// ClaimAudience sets Audience and is stored in each generated token. Cannot be empty
+	ClaimAudience string
 }
 
 // NewTokenMan creates a new JWT token manager.
@@ -57,7 +61,9 @@ func NewTokenMan(signingKey string) (*TokenMan, error) {
 	return &TokenMan{
 		mutex:            new(sync.RWMutex),
 		sharedSigningKey: []byte(signingKey),
-		cache:            map[string]AccessToken{}}, nil
+		cache:            map[string]AccessToken{},
+		ClaimIssuer:      "github.com/emicklei/tokenman",
+		ClaimAudience:    "authorization,authentication"}, nil
 }
 
 // VerifyToken checks the token and returns the AccessToken.
@@ -111,11 +117,17 @@ func (m *TokenMan) getAccessToken(tokenString string) (AccessToken, error) {
 
 // CreateToken returns a new encoded JWT token using the identity
 func (m *TokenMan) CreateToken(identity string, hoursTTL int) (string, error) {
+	if len(m.ClaimAudience) == 0 {
+		return "", ErrorClaimAudienceEmpty
+	}
+	if len(m.ClaimIssuer) == 0 {
+		return "", ErrorClaimIssuerEmpty
+	}
 	token := jwt.New(jwt.SigningMethodHS256)
 	token.Claims = jwt.StandardClaims{
-		Audience:  ClaimAudience,
+		Audience:  m.ClaimAudience,
 		ExpiresAt: time.Now().Add(time.Hour * time.Duration(hoursTTL)).Unix(),
-		Issuer:    ClaimIssuer,
+		Issuer:    m.ClaimIssuer,
 		Id:        identity,
 		IssuedAt:  time.Now().Unix(),
 	}

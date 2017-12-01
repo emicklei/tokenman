@@ -15,7 +15,7 @@ func TestCreateAndVerifyToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%#v\n%#v\n:%v", tok, at, err)
 	}
-	if at.Issuer != ClaimIssuer {
+	if at.Issuer != tm.ClaimIssuer {
 		t.Error("expected value of ClaimAudience")
 	}
 	if at.Identity != "tester" {
