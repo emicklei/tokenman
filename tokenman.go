@@ -19,6 +19,9 @@ var (
 	// ErrTokenCreationFailed
 	ErrTokenCreationFailed = errors.New("creating authorization token failed")
 
+	// ErrSigningKeyEmpty
+	ErrSigningKeyEmpty = errors.New("JWT signing key cannot be empty")
+
 	// ClaimIssuer is the identiy of the issuer
 	ClaimIssuer = "github.com/emicklei/tokenman"
 
@@ -46,7 +49,11 @@ type TokenMan struct {
 	cache            map[string]AccessToken
 }
 
+// NewTokenMan creates a new JWT token manager.
 func NewTokenMan(signingKey string) (*TokenMan, error) {
+	if len(signingKey) == 0 {
+		return nil, ErrSigningKeyEmpty
+	}
 	return &TokenMan{
 		mutex:            new(sync.RWMutex),
 		sharedSigningKey: []byte(signingKey),
