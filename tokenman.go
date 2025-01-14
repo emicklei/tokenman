@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 var (
@@ -123,14 +123,14 @@ func (m *TokenMan) CreateToken(identity string, hoursTTL int) (string, error) {
 	if len(m.ClaimIssuer) == 0 {
 		return "", ErrorClaimIssuerEmpty
 	}
-	token := jwt.New(jwt.SigningMethodHS256)
-	token.Claims = jwt.StandardClaims{
-		Audience:  m.ClaimAudience,
-		ExpiresAt: time.Now().Add(time.Hour * time.Duration(hoursTTL)).Unix(),
-		Issuer:    m.ClaimIssuer,
-		Id:        identity,
-		IssuedAt:  time.Now().Unix(),
+	claims := jwt.MapClaims{
+		"aud": m.ClaimAudience,
+		"exp": time.Now().Add(time.Hour * time.Duration(hoursTTL)).Unix(),
+		"iss": m.ClaimIssuer,
+		"jti": identity,
+		"iat": time.Now().Unix(),
 	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(m.sharedSigningKey)
 	if err != nil {

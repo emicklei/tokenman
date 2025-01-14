@@ -1,6 +1,6 @@
 # tokenman
 
-Simple Go library for generating and verifying JWT Tokens on top of `github.com/dgrijalva/jwt-go`.
+Simple Go library for generating and verifying JWT Tokens on top of `github.com/golang-jwt/jwt/v5`.
 
 ### install
 
